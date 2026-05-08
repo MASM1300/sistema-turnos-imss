@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pantalla de Sala de Espera Pro</title>
+    <style>
+        :root {
+            --imss-verde-oscuro: #1C4C3E;
+            --imss-dorado: #B38E5D;
+            --imss-verde-claro-acento: #285C4D;
+            --blanco: #ffffff;
+        }
+
+        body { 
+            zoom: 0.9;
+            margin: 0; 
+            background: var(--imss-verde-oscuro); 
+            color: var(--blanco); 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: grid;
+            grid-template-columns: 70% 30%; /* 70% Video, 30% Turno */
+            grid-template-rows: 1fr 15vh;    /* El cuerpo principal y la barra de noticias */
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Contenedor del Video de YouTube */
+        .area-video {
+            background: black;
+            border-right: 5px solid var(--azul-vivo);
+            position: relative;
+        }
+
+        /* Panel Lateral del Turno */
+        .panel-derecho {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+            background: var(--imss-verde-oscuro); /* Color plano institucional */
+    border-left: 2px solid var(--imss-dorado); /* Un detalle elegante */
+        }
+
+        .etiqueta-sig {
+            font-size: 1.8rem;
+            color: var(--azul-vivo);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-weight: bold;
+        }
+
+        #nombre-paciente {
+            font-size: 4rem;
+            margin: 15px 0;
+            color: #fff;
+            text-shadow: 2px 4px 10px rgba(0,0,0,0.5);
+            word-wrap: break-word;
+            width: 100%;
+        }
+
+        .caja-turno {
+            background: var(--imss-verde-claro-acento);
+            padding: 25px;
+            border-radius: 10px;
+            width: 85%;
+            border: 2px solid var(--imss-dorado);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        #num-turno {
+            font-size: 6vw;
+            font-weight: 900;
+            display: block;
+        }
+
+        /* Barra de Noticias Inferior */
+        .barra-noticias {
+            grid-column: 1 / span 2;
+            background: var(--blanco);
+            color: #333;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            border-top: 6px solid var(--acento);
+        }
+
+        .texto-movil {
+            white-space: nowrap;
+            font-size: 3rem;
+            font-weight: bold;
+            animation: scroll-noticias 40s linear infinite;
+        }
+
+        @keyframes scroll-noticias {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. ZONA DE VIDEO -->
+    <div class="area-video">
+        <!-- REEMPLAZA 'TU_VIDEO_ID' CON EL ID DE TU VIDEO DE YOUTUBE -->
+        <iframe id="reproductorYT" 
+                src="https://www.youtube.com/embed?listType=playlist&list=PLbpl1Pk6rR0yPIqUgkWjpUBSaLTaaPkbN&enablejsapi=1&autoplay=1&mute=0&loop=1"
+                frameborder="0" 
+                style="width: 100%; height: 100%;"
+                allow="autoplay; encrypted-media">
+        </iframe>
+    </div>
+
+    <!-- 2. PANEL DE TURNOS -->
+    <div class="panel-derecho">
+        <!-- LOGO INSTITUCIONAL -->
+<img src="/static/logo_imss.png" style="width: 50px; margin-bottom: 20px; filter: brightness(0) invert(1);"> 
+<!-- El filtro 'brightness(0) invert(1)' vuelve el logo blanco si es que el original es negro -->
+        <!-- NUEVO: Contenedor del Reloj -->
+    <div id="reloj-contenedor" style="margin-bottom: 40px;">
+        <div id="reloj-hora" style="font-size: 3vw; font-weight: bold; color: white;">00:00:00</div>
+        <div id="reloj-fecha" style="font-size: 1.2rem; color: var(--azul-vivo); text-transform: uppercase;">-- -- --</div>
+    </div>
+        <div class="etiqueta-sig">Siguiente Paciente</div>
+        <h1 id="nombre-paciente">EN ESPERA</h1>
+        <div class="caja-turno">
+            <span style="font-size: 1.2rem; display: block; margin-bottom: 3px;">TURNO</span>
+            <span id="num-turno">--</span>
+        </div>
+    </div>
+
+    <!-- 3. BARRA DE NOTICIAS -->
+    <div class="barra-noticias">
+        <div class="texto-movil">
+            🏥 Bienvenido a nuestro consultorio • Favor de apagar su celular o mantenerlo en vibrar • Lave sus manos al ingresar • Próxima jornada de salud visual: Junio 2026 • Gracias por su preferencia.
+        </div>
+    </div>
+
+    <!-- SCRIPTS DE COMUNICACIÓN Y YOUTUBE -->
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script>
+        // --- Lógica de la API de YouTube ---
+        var tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        var firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        var player;
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('reproductorYT', {
+                events: {
+                    'onReady': onPlayerReady
+                }
+            });
+        }
+
+        function onPlayerReady(event) {
+    // Intentamos quitar el silencio en cuanto el reproductor esté listo
+    event.target.unMute(); 
+    event.target.setVolume(30); // Volumen inicial al 30%
+}
+
+        // --- Lógica de Sockets (Llamado de turnos) ---
+        const socket = io();
+
+        socket.on('actualizar_pantalla', function(data) {
+            // 1. Actualizar texto visual
+            document.getElementById('nombre-paciente').innerText = data.nombre.toUpperCase();
+            document.getElementById('num-turno').innerText = data.turno;
+
+            // 2. Control inteligente de volumen de YouTube
+            if (player && typeof player.setVolume === "function") {
+                player.setVolume(5); // Bajamos el video al 5% para que no estorbe
+            }
+
+            // 3. Voz del sistema
+            const voz = new SpeechSynthesisUtterance("Paciente " + data.nombre + ". Turno " + data.turno + ". Favor de pasar.");
+            voz.lang = 'es-MX';
+            voz.rate = 0.9; // Un poco más lento para que sea claro
+
+            voz.onend = function() {
+                // Al terminar de hablar, regresamos el volumen
+                if (player && typeof player.setVolume === "function") {
+                    player.setVolume(30);
+                }
+            };
+
+            window.speechSynthesis.speak(voz);
+        });
+        function actualizarReloj() {
+    const ahora = new Date();
+    
+    // Formatear la hora
+    const opcionesHora = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
+    document.getElementById('reloj-hora').innerText = ahora.toLocaleTimeString('es-MX', opcionesHora);
+
+    // Formatear la fecha
+    const opcionesFecha = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    let fechaTexto = ahora.toLocaleDateString('es-MX', opcionesFecha);
+    // Poner la primera letra en mayúscula
+    document.getElementById('reloj-fecha').innerText = fechaTexto.charAt(0).toUpperCase() + fechaTexto.slice(1);
+}
+
+// Ejecutar la función cada segundo
+setInterval(actualizarReloj, 1000);
+actualizarReloj(); // Llamada inicial para que no empiece en blanco
+    </script>
+</body>
+</html>

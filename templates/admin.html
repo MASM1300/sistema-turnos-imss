@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel de Control - Turnos</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; display: flex; justify-content: center; padding-top: 50px; }
+        .card { background: #b38e5dc2; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 300px; }
+        h2 { color: #1c4c3e; text-align: center; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #1C4C3E; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #285C4D; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Siguiente Paciente</h2>
+        <input type="text" id="nombre" placeholder="Nombre del paciente">
+        <input type="text" id="turno" placeholder="Turno (ej. A-01)">
+        <button onclick="enviarTurno()">Llamar Turno</button>
+    </div>
+
+    <!-- Cargamos la herramienta de comunicación -->
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+        function enviarTurno() {
+            const nombre = document.getElementById('nombre').value;
+            const turno = document.getElementById('turno').value;
+            if(nombre && turno) {
+                socket.emit('nuevo_turno', {nombre: nombre, turno: turno});
+                document.getElementById('nombre').value = ''; // Limpiar campo
+            } else {
+                alert("Por favor llena ambos campos");
+            }
+        }
+    </script>
+</body>
+</html>
