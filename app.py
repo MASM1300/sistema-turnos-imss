@@ -41,5 +41,5 @@ def handle_turno(data):
 
 # 5. Arrancar el servidor
 if __name__ == '__main__':
-    # 'host=0.0.0.0' permite que otros dispositivos en la misma red vean la web
-    socketio.run(app, debug=True, host='0.0.0.0')
+    # Importante: No uses app.run, usa socketio.run
+    socketio.run(app, host='0.0.0.0', port=5000)
