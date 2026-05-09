@@ -1,10 +1,13 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 from flask_socketio import SocketIO, emit
+import eventlet
 
-# 1. Configuramos la aplicación
+# Esto es lo que le falta a muchos y causa el error en Render:
+eventlet.monkey_patch() 
+
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'Piso9' # Una clave para seguridad interna
-socketio = SocketIO(app)
+app.secret_key = 'clave_secreta_imss'
+socketio = SocketIO(app, cors_allowed_origins="*") # Agregamos esto para evitar bloqueos de internet+55
 
 # 2. Ruta para el Panel de Control (donde tú escribes)
 @app.route('/admin', methods=['GET', 'POST'])
